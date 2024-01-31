@@ -20,7 +20,7 @@ def wait_for_availability(function_that_fails, number_of_tries, time_between_tri
 
 # Configuration du producteur Kafka
 producer = wait_for_availability(
-    lambda:Producer({'bootstrap.servers': "kakfa-broker:9092"}),
+    lambda:Producer({'bootstrap.servers': "kafka-broker:9092"}),
     number_of_tries = 10,
     time_between_tries = 2
 )
