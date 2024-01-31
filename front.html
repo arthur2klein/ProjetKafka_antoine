@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GPS Tracking</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <div id="map" style="height: 400px;"></div>
+    <script>
+        var map = L.map('map').setView([0, 0], 2);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        function updateLocation() {
+            axios.get('http://localhost:8000/gps/IP1').then(response => {
+                var data = response.data;
+                var marker = L.marker([data.latitude, data.longitude]).addTo(map);
+                map.setView([data.latitude, data.longitude], 10);
+            });
+        }
+
+        setInterval(updateLocation, 5000);
+    </script>
+</body>
+</html>
