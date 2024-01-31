@@ -37,4 +37,10 @@ def get_gps_data(ip: str):
         return {}
     return GPSData(ip=row[0], latitude=row[1], longitude=row[2], timestamp=row[3])
 
+@app.get("/gps")
+def get_gps_all():
+    cursor.execute("SELECT ip, latitude, longitude, timestamp_ FROM gps_data ORDER BY timestamp_ DESC")
+    rows = cursor.fetchall()
+    return {i:{'ip':row[0], 'latitude':row[1], 'longitude':row[2], 'timestamp':int(row[3].timestamp())} for i, row in enumerate(rows)}
+
 uvicorn.run(app, host="0.0.0.0", port = 8080)

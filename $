@@ -1,5 +1,4 @@
 from confluent_kafka import Consumer, KafkaError
-from datetime import datetime
 import json
 import psycopg2
 import time
@@ -47,10 +46,9 @@ logging.info('Consumer created')
 
 try:
     while True:
-        logging.info(f'Topics available: {consumer.list_topics()}')
         consumer.subscribe(['coordinates'])
-        msg = consumer.poll(timeout=1.0)
-        logging.info(f'I received {msg}')
+        msg = consumer.consume(timeout=1.0)
+        logging.infof('I received {msg}')
         if msg is None:
             logging.info(f'No message received')
             continue
@@ -62,18 +60,13 @@ try:
                 print(msg.error())
                 continue
 
-        try:
-            data = json.loads(msg.value())
-        except:
-            logging.error(f'Error while converting {msg.value}')
-            continue
-        logging.info('Saving to database')
+        data = json.loads(msg.value())
+        logging.info(f'Message received: {data}')
         cursor.execute(
-            "INSERT INTO gps_data (ip, latitude, longitude, timestamp_) VALUES (%s, %s, %s, %s)",
-            (data['ip'], data['latitude'], data['longitude'], datetime.fromtimestamp(data['timestamp']))
+            "INSERT INTO gps_data (ip, latitude, longitude, timestamp) VALUES (%s, %s, %s, %s)",
+            (data['ip'], data['latitude'], data['longitude'], data['timestamp'])
         )
         conn.commit()
-        logging.info('Saved in database')
 
 except KeyboardInterrupt:
     pass

@@ -21,7 +21,7 @@ def wait_for_kafka(number_of_tries, time_between_tries):
   for _ in range(10):
     try:
       res = Producer({'bootstrap.servers': "kafka:9092"})
-      res.produce('test', key=ip, value='', callback=delivery_report)
+      res.produce('test', key=ip, value='banane', callback=delivery_report)
       return res
     except Exception as e:
       print(f'Error when connectiong to Kafka: {e}')
@@ -44,13 +44,13 @@ def send_gps_data(ip):
     Envoie des données GPS simulées au topic Kafka.
     """
     # Création de données GPS aléatoires
-    logging.info("Sending data")
     data = {
         'ip': ip,
         'latitude': latitude + (random.randrange(-10,10)/10),
         'longitude':  longitude + (random.randrange(-10,10)/10),
         'timestamp': time.time()
     }
+    logging.info(f"Sending {data}")
     while globe.is_ocean(data["latitude"],data["longitude"]):
         data = {
             'ip': ip,
@@ -59,12 +59,13 @@ def send_gps_data(ip):
             'timestamp': time.time()
         }
         logging.info(f'Sending data: {data}')
-    # Envoi des données au topic 'coordinates'
-        producer.produce('coordinates', key=ip, value=json.dumps(data), callback=delivery_report)
-        producer.flush()
+
+    producer.produce('coordinates', value=json.dumps(data), callback=delivery_report)
+    producer.poll(0)
 
 # Boucle pour envoyer des données GPS de manière continue
 while True:
 
+    logging.info(f'Topics available: {producer.list_topics()}')
     send_gps_data(ip)
     time.sleep(3)  # Pause de 5 secondes entre les envois
