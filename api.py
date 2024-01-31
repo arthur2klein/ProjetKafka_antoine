@@ -4,14 +4,14 @@ from pydantic import BaseModel
 import uvicorn
 import time
 
-def wait_for_availability(function_that_fails, number_of_tries, time_between_tries):
-  for _ in range(number_of_tries):
+def wait_for_psycopg2(number_of_tries, time_between_tries):
+  for _ in range(10):
     try:
-      res = function_that_fails()
+      res = psycopg2.connect(dbname='gps_db', user='utilisateur', password='kafkacestcool', host='db')
       return res
     except:
-      time.sleep(time_between_tries)
-  raise TimeoutError(f'{function_that_fails.__name__} did not answer.')
+      time.sleep(2)
+  raise TimeoutError('psycopg2 did not answer.')
 
 app = FastAPI()
 
@@ -23,8 +23,7 @@ class GPSData(BaseModel):
     timestamp: int
 
 # Connexion à PostgreSQL
-conn = wait_for_availability(
-    lambda:psycopg2.connect(dbname='gps_db', user='utilisateur', password='kafkacestcool', host='db'),
+conn = wait_for_psycopg2(
     number_of_tries = 5,
     time_between_tries = 2
 )

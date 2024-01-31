@@ -7,35 +7,44 @@ import numpy as np
 import os
 import logging
 
-
 ip = os.environ.get("ip")
 logging.basicConfig(level=logging.INFO)
 
+def delivery_report(err, msg):
+    if err is not None:
+        logging.error(f'Échec de la livraison du message : {err}')
+    else:
+        logging.info(f'Message livré à {msg.topic()} [{msg.partition()}]')
 
-def wait_for_availability(function_that_fails, number_of_tries, time_between_tries):
-  for _ in range(number_of_tries):
+def wait_for_kafka(number_of_tries, time_between_tries):
+  time.sleep(time_between_tries)
+  for _ in range(10):
     try:
-      res = function_that_fails()
+      res = Producer({'bootstrap.servers': "kafka:9092"})
+      res.produce('test', key=ip, value='', callback=delivery_report)
       return res
-    except:
-      time.sleep(time_between_tries)
-  raise TimeoutError(f'{function_that_fails.__name__} did not answer.')
+    except Exception as e:
+      print(f'Error when connectiong to Kafka: {e}')
+      time.sleep(2)
+  raise TimeoutError('kafka did not answer.')
 
 # Configuration du producteur Kafka
-producer = wait_for_availability(
-    lambda:Producer({'bootstrap.servers': "kafka:9092"}),
+logging.info("Creation of the producer")
+producer = wait_for_kafka(
     number_of_tries = 10,
     time_between_tries = 2
 )
+logging.info("Producer created")
 
 # Coordonnées de Paris "Lieu de démarrage"
 latitude = 48.87
-longitude = 2.33 
+longitude = 2.33
 def send_gps_data(ip):
     """
     Envoie des données GPS simulées au topic Kafka.
     """
     # Création de données GPS aléatoires
+    logging.info("Sending data")
     data = {
         'ip': ip,
         'latitude': latitude + (random.randrange(-10,10)/10),
@@ -56,5 +65,6 @@ def send_gps_data(ip):
 
 # Boucle pour envoyer des données GPS de manière continue
 while True:
+
     send_gps_data(ip)
     time.sleep(3)  # Pause de 5 secondes entre les envois
