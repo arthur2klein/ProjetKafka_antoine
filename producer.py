@@ -5,13 +5,24 @@ import time
 import random
 import numpy as np
 import os
+
+
 ip = os.environ.get("ip")
 
+def wait_for_availability(function_that_fails, number_of_tries, time_between_tries):
+  for _ in range(number_of_tries):
+    try:
+      res = function_that_fails()
+      return res
+    except:
+      time.sleep(time_between_tries)
+  raise TimeoutError(f'{function_that_fails.__name__} did not answer.')
+
 # Configuration du producteur Kafka
-producer = Producer(
-    {
-        'bootstrap.servers': "kakfa-broker:9092"
-    }
+producer = wait_for_availability(
+    lambda:Producer({'bootstrap.servers': "kakfa-broker:9092"}),
+    number_of_tries = 10,
+    time_between_tries = 2
 )
 
 # Coordonnées de Paris "Lieu de démarrage"
