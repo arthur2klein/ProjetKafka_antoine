@@ -5,9 +5,12 @@ import time
 import random
 import numpy as np
 import os
+import logging
 
 
 ip = os.environ.get("ip")
+logging.basicConfig(level=logging.INFO)
+
 
 def wait_for_availability(function_that_fails, number_of_tries, time_between_tries):
   for _ in range(number_of_tries):
@@ -20,7 +23,7 @@ def wait_for_availability(function_that_fails, number_of_tries, time_between_tri
 
 # Configuration du producteur Kafka
 producer = wait_for_availability(
-    lambda:Producer({'bootstrap.servers': "kafka-broker:9092"}),
+    lambda:Producer({'bootstrap.servers': "kafka:9092"}),
     number_of_tries = 10,
     time_between_tries = 2
 )
@@ -46,6 +49,7 @@ def send_gps_data(ip):
             'longitude': longitude + (random.randrange(-10,10)/10),
             'timestamp': time.time()
         }
+        logging.info(f'Sending data: {data}')
     # Envoi des données au topic 'coordinates'
         producer.produce('coordinates', key=ip, value=json.dumps(data), callback=delivery_report)
         producer.flush()

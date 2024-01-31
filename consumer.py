@@ -2,6 +2,9 @@ from confluent_kafka import Consumer
 import json
 import psycopg2
 import time
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 def wait_for_availability(function_that_fails, number_of_tries, time_between_tries):
   for _ in range(number_of_tries):
@@ -22,7 +25,7 @@ cursor = conn.cursor()
 
 # Configuration du consommateur Kafka
 consumer = wait_for_availability(lambda:Consumer({
-        'bootstrap.servers': "kafka-broker:9092",
+        'bootstrap.servers': "kafka:9092",
         'group.id': "gps_consumer_group",
         'auto.offset.reset': 'earliest'  # Commence à lire depuis le début du topic
     }),
@@ -40,10 +43,12 @@ try:
             if msg.error().code() == KafkaError._PARTITION_EOF:
                 continue
             else:
+                logging.error(f'Error received: {msg.error}')
                 print(msg.error())
                 break
 
         data = json.loads(msg.value())
+        logging.info(f'Message received: {data}')
         cursor.execute(
             "INSERT INTO gps_data (ip, latitude, longitude, timestamp) VALUES (%s, %s, %s, %s)",
             (data['ip'], data['latitude'], data['longitude'], data['timestamp'])
